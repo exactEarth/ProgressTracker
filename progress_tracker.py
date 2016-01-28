@@ -1,6 +1,6 @@
 from __future__ import division
 from datetime import datetime, timedelta
-from ee_libs.python_version_backports import total_seconds
+from python_version_backports import total_seconds
 
 class Timeout(object):
     def __init__(self, delta, start_time=None):
