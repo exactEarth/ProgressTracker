@@ -17,17 +17,23 @@ class Timeout(object):
         return self.deadline - datetime.utcnow()
 
 class ProgressTracker(object):
-    def __init__(self, total=None, every_x_percent=None, every_n_records=None, every_n_seconds=None, every_n_seconds_idle=None):
-        
+    #This is a class that allows you to offload the tracking of progress.
+    #It encapsulates a number of common conditions for reporting progress.
+    #
+    #For example, you often want to print out your processing progress every x percent of completion, but also every y seconds.
+    #This class allows you to not have to do all of this tracking in your code. Periodically, just call the 'check' function with the iteration (1-based, not 0-based) you are on, and format the results.
+    #
+    def __init__(self, total=None, every_x_percent=None, every_n_records=None, every_n_seconds=None, every_n_seconds_idle=None, ignore_first_iteration=True):
+
         self.total = total
         
         self.start_time = datetime.utcnow()
-        
+
         self.every_x_percent = every_x_percent
-        self.next_percent = 0
-        
+        self.next_percent = every_x_percent if ignore_first_iteration else 0
+
         self.every_n_records = every_n_records
-        self.next_record_count = 0
+        self.next_record_count = every_n_records if ignore_first_iteration else 0
         
         self.timeout = Timeout(timedelta(seconds=every_n_seconds)) if every_n_seconds != None else None
         self.idle_timeout = Timeout(timedelta(seconds=every_n_seconds_idle)) if every_n_seconds_idle != None else None
@@ -47,20 +53,22 @@ class ProgressTracker(object):
             should_report = True
         elif self.total != None and self.every_x_percent != None:
             percent_complete = (i / self.total) * 100
-            if percent_complete > self.next_percent:
+            if percent_complete >= self.next_percent:
                 should_report = True
                 self.next_percent = ((int(percent_complete) // self.every_x_percent) + 1) * self.every_x_percent
-        elif self.every_n_records != None and i > self.next_record_count:
+        elif self.every_n_records != None and i >= self.next_record_count:
             should_report = True
             self.next_record_count = ((i // self.every_n_records) + 1) * self.every_n_records
+            
         return should_report
         
+    #Returns a tuple that contains all of the usual values that you want to print out.
     def check(self, i):
         if self.should_report(i):
             time_taken = datetime.utcnow() - self.start_time
             if self.total != None:
                 percent_complete = (i / self.total) * 100
-                estimated_time_remaining = timedelta(seconds=((100-percent_complete)/percent_complete)*total_seconds(time_taken))
+                estimated_time_remaining = timedelta(seconds=((100-percent_complete)/percent_complete)*total_seconds(time_taken)) if percent_complete != 0 else None
             else:
                 percent_complete = None
                 estimated_time_remaining = None

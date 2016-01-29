@@ -5,27 +5,53 @@ from progress_tracker import ProgressTracker
 
 class BoundedTest(unittest.TestCase):
     def test_every_x_percent(self):
+        #[5,10...100]
         NUMBER_OF_ITERATIONS = 100
         
         times_reported = 0
         progress = ProgressTracker(total=NUMBER_OF_ITERATIONS, every_x_percent=5)
         with progress:
-            for i in range(1, NUMBER_OF_ITERATIONS+1):
+            for i in range(0, NUMBER_OF_ITERATIONS+1):
                 if progress.check(i) != None:
                     times_reported += 1
         self.assertEqual(times_reported, 20)
-
+        
+    def test_every_x_percent_while_including_first(self):
+        #[0,5,10...100]
+        NUMBER_OF_ITERATIONS = 100
+        
+        times_reported = 0
+        progress = ProgressTracker(total=NUMBER_OF_ITERATIONS, every_x_percent=5, ignore_first_iteration=False)
+        with progress:
+            for i in range(0, NUMBER_OF_ITERATIONS+1):
+                if progress.check(i) != None:
+                    times_reported += 1
+        self.assertEqual(times_reported, 21)
+        
     def test_every_n_records(self):
+        #[5,10...100]
         NUMBER_OF_ITERATIONS = 100
         
         times_reported = 0
         progress = ProgressTracker(total=NUMBER_OF_ITERATIONS, every_n_records=5)
         with progress:
-            for i in range(1, NUMBER_OF_ITERATIONS+1):
+            for i in range(0, NUMBER_OF_ITERATIONS+1):
                 if progress.check(i) != None:
                     times_reported += 1
         self.assertEqual(times_reported, 20)
-            
+        
+    def test_every_n_records_while_includinf_first(self):
+        #[0,5,10...100]
+        NUMBER_OF_ITERATIONS = 100
+        
+        times_reported = 0
+        progress = ProgressTracker(total=NUMBER_OF_ITERATIONS, every_n_records=5, ignore_first_iteration=False)
+        with progress:
+            for i in range(0, NUMBER_OF_ITERATIONS+1):
+                if progress.check(i) != None:
+                    times_reported += 1
+        self.assertEqual(times_reported, 21)
+        
     def test_every_n_seconds(self):
         NUMBER_OF_ITERATIONS = 2
         SECONDS_BETWEEN_ITERATIONS = 2
