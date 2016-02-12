@@ -1,6 +1,8 @@
 from __future__ import division
 from datetime import datetime, timedelta
-from python_version_backports import total_seconds
+
+from python_version_backports import MonkeyPatch
+MonkeyPatch.patch_total_seconds()
 
 class Timeout(object):
     def __init__(self, delta, start_time=None):
@@ -68,12 +70,12 @@ class ProgressTracker(object):
             time_taken = datetime.utcnow() - self.start_time
             if self.total != None:
                 percent_complete = (i / self.total) * 100
-                estimated_time_remaining = timedelta(seconds=((100-percent_complete)/percent_complete)*total_seconds(time_taken)) if percent_complete != 0 else None
+                estimated_time_remaining = timedelta(seconds=((100-percent_complete)/percent_complete)*time_taken.total_seconds()) if percent_complete != 0 else None
             else:
                 percent_complete = None
                 estimated_time_remaining = None
             
-            items_per_second = i/total_seconds(time_taken) if total_seconds(time_taken) != 0 else None
+            items_per_second = i/time_taken.total_seconds() if time_taken.total_seconds() != 0 else None
             
             result = (i, self.total, percent_complete, time_taken, estimated_time_remaining, items_per_second)
         else:
