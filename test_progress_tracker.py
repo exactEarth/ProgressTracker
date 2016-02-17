@@ -40,7 +40,7 @@ class BoundedTest(unittest.TestCase):
                     times_reported += 1
         self.assertEqual(times_reported, 20)
         
-    def test_every_n_records_while_includinf_first(self):
+    def test_every_n_records_while_including_first(self):
         #[0,5,10...100]
         NUMBER_OF_ITERATIONS = 100
         
@@ -82,6 +82,18 @@ class BoundedTest(unittest.TestCase):
             if progress.check(0) != None:
                     times_reported += 1
             self.assertEqual(times_reported, 1)
+            
+    def test_every_x_percent_every_y_records(self):
+        NUMBER_OF_ITERATIONS = 100
+        
+        times_reported = 0
+        progress = ProgressTracker(NUMBER_OF_ITERATIONS, every_x_percent=10, every_n_records=11)
+        with progress:
+            for i in range(0, NUMBER_OF_ITERATIONS+1):
+                if progress.check(i) != None:
+                    times_reported += 1
+        self.assertEqual(times_reported, 19)
+        
 
 if __name__ == '__main__':
     unittest.main()

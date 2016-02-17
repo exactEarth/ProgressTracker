@@ -51,14 +51,14 @@ class ProgressTracker(object):
         if self.timeout != None and self.timeout.is_overdue():
             should_report = True
             self.timeout.reset()
-        elif self.idle_timeout != None and self.idle_timeout.is_overdue():
+        if self.idle_timeout != None and self.idle_timeout.is_overdue():
             should_report = True
-        elif self.total != None and self.every_x_percent != None:
+        if self.total != None and self.every_x_percent != None:
             percent_complete = (i / self.total) * 100
             if percent_complete >= self.next_percent:
                 should_report = True
                 self.next_percent = ((int(percent_complete) // self.every_x_percent) + 1) * self.every_x_percent
-        elif self.every_n_records != None and i >= self.next_record_count:
+        if self.every_n_records != None and i >= self.next_record_count:
             should_report = True
             self.next_record_count = ((i // self.every_n_records) + 1) * self.every_n_records
             
