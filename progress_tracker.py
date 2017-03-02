@@ -25,7 +25,7 @@ class ProgressTracker(object):
     #For example, you often want to print out your processing progress every x percent of completion, but also every y seconds.
     #This class allows you to not have to do all of this tracking in your code. Periodically, just call the 'check' function with the iteration (1-based, not 0-based) you are on, and format the results.
     #
-    def __init__(self, total=None, every_x_percent=None, every_n_records=None, every_n_seconds=None, every_n_seconds_idle=None, ignore_first_iteration=True):
+    def __init__(self, total=None, every_x_percent=None, every_n_records=None, every_n_seconds=None, every_n_seconds_idle=None, ignore_first_iteration=True, last_iteration=False):
 
         self.total = total
         
@@ -39,6 +39,8 @@ class ProgressTracker(object):
         
         self.timeout = Timeout(timedelta(seconds=every_n_seconds)) if every_n_seconds != None else None
         self.idle_timeout = Timeout(timedelta(seconds=every_n_seconds_idle)) if every_n_seconds_idle != None else None
+
+        self.last_iteration = last_iteration
 
     def __enter__(self):
         self.start_time = datetime.utcnow()
@@ -61,6 +63,8 @@ class ProgressTracker(object):
         if self.every_n_records != None and i >= self.next_record_count:
             should_report = True
             self.next_record_count = ((i // self.every_n_records) + 1) * self.every_n_records
+        if self.total != None and self.last_iteration and i == self.total:
+            should_report = True
             
         return should_report
         
