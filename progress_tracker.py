@@ -55,8 +55,8 @@ class ProgressTracker(object):
             length_related_kwargs = ["total", "percent_complete", "estimated_time_remaining"]
             invalid_args = [length_related_kwarg for length_related_kwarg in length_related_kwargs if "{{{0}}}".format(length_related_kwarg) in self.format_string]
             if len(invalid_args) > 0:
-                invalid_arg_strings = ["'{0}'".format(invalid_arg) for invalid_arg in invalid_args]
-                proper_grammar = ", ".join(invalid_arg_strings[:-1]) + ', or {0}'.format(invalid_arg_strings[-1])
+                invalid_arg_strings = ["'{{{0}}}'".format(invalid_arg) for invalid_arg in invalid_args]
+                proper_grammar = ", ".join(invalid_arg_strings[:-1]) + ', nor {0}'.format(invalid_arg_strings[-1]) if len(invalid_arg_strings) > 1 else invalid_arg_strings[0]
                 raise Exception("Format string cannot include {0} if total length is not available.".format(proper_grammar))
 
             if every_x_percent is not None:
