@@ -4,6 +4,25 @@ import unittest
 from progress_tracker import track_progress
 
 
+class CustomFormatStrings(unittest.TestCase):
+    def custom_callback(self, message):
+        int(message)
+
+    def test_custom_bounded(self):
+        # [5,10...100]
+        NUMBER_OF_ITERATIONS = 101
+
+        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_x_percent=5, callback=self.custom_callback, format_string="{i}"))
+        self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
+
+    def test_custom_unbounded(self):
+        # [5,10...100]
+        NUMBER_OF_ITERATIONS = 101
+
+        results = list(track_progress((i for i in range(0, NUMBER_OF_ITERATIONS)), every_n_records=5, callback=self.custom_callback, format_string="{i}"))
+        self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
+
+
 class BoundedTests(unittest.TestCase):
     def setUp(self):
         self.callback_count = 0

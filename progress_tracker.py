@@ -35,8 +35,7 @@ class ProgressTracker(object):
             self.total = total
 
         if self.total is None:
-            if format_string is None:
-                self.format_string = "{i} in {time_taken}"
+            self.format_string = format_string if format_string is not None else "{i} in {time_taken}"
 
             length_related_kwargs = ["total", "percent_complete", "estimated_time_remaining"]
             invalid_args = [length_related_kwarg for length_related_kwarg in length_related_kwargs if "{{{0}}}".format(length_related_kwarg) in self.format_string]
@@ -49,8 +48,7 @@ class ProgressTracker(object):
                 raise Exception("Cannot ask to report 'every_x_percent' if total length is not available")
 
         else:
-            if format_string is None:
-                self.format_string = "{i}/{total} ({percent_complete}%) in {time_taken} (ETA:{estimated_time_remaining})"
+            self.format_string = format_string if format_string is not None else "{i}/{total} ({percent_complete}%) in {time_taken} (ETA:{estimated_time_remaining})"
 
         self.callback = callback
 
