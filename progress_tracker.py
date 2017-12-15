@@ -6,6 +6,18 @@ from python_version_backports import MonkeyPatch
 MonkeyPatch.patch_total_seconds()
 
 
+def default_format_callback(format_string, **kwargs):
+    i = kwargs["i"]
+    total = kwargs["total"]
+    if format_string is None:
+        if total is None or i == total:
+            format_string = "{i} in {time_taken}"
+        else:
+            format_string = "{i}/{total} ({percent_complete}%) in {time_taken} (Time left: {estimated_time_remaining})"
+
+    return format_string.format(**kwargs)
+
+
 class ProgressTracker(object):
     # This is a class that allows you to offload the tracking of progress.
     # It encapsulates a number of common conditions for reporting progress.
@@ -13,9 +25,10 @@ class ProgressTracker(object):
     # For example, you often want to print out your processing progress every x percent of completion, but also every y seconds.
     # This class allows you to not have to do all of this tracking in your code. It will call its callback function with a formatted string.
     #
-    def __init__(self, iterable,
+    def __init__(self, iterable=None,
                  total=None,
                  callback=print,
+                 format_callback=default_format_callback,
                  format_string=None,
                  every_x_percent=None,
                  every_n_records=None,
@@ -34,23 +47,21 @@ class ProgressTracker(object):
         if self.total is None and total is not None:
             self.total = total
 
+        self.format_string = format_string
         if self.total is None:
-            self.format_string = format_string if format_string is not None else "{i} in {time_taken}"
-
             length_related_kwargs = ["total", "percent_complete", "estimated_time_remaining"]
-            invalid_args = [length_related_kwarg for length_related_kwarg in length_related_kwargs if "{{{0}}}".format(length_related_kwarg) in self.format_string]
-            if len(invalid_args) > 0:
-                invalid_arg_strings = ["'{{{0}}}'".format(invalid_arg) for invalid_arg in invalid_args]
-                proper_grammar = ", ".join(invalid_arg_strings[:-1]) + ', nor {0}'.format(invalid_arg_strings[-1]) if len(invalid_arg_strings) > 1 else invalid_arg_strings[0]
-                raise Exception("Format string cannot include {0} if total length is not available.".format(proper_grammar))
+            if self.format_string is not None:
+                invalid_args = [length_related_kwarg for length_related_kwarg in length_related_kwargs if "{{{0}}}".format(length_related_kwarg) in self.format_string]
+                if len(invalid_args) > 0:
+                    invalid_arg_strings = ["'{{{0}}}'".format(invalid_arg) for invalid_arg in invalid_args]
+                    proper_grammar = ", ".join(invalid_arg_strings[:-1]) + ', nor {0}'.format(invalid_arg_strings[-1]) if len(invalid_arg_strings) > 1 else invalid_arg_strings[0]
+                    raise Exception("Format string cannot include {0} if total length is not available.".format(proper_grammar))
 
             if every_x_percent is not None:
                 raise Exception("Cannot ask to report 'every_x_percent' if total length is not available")
 
-        else:
-            self.format_string = format_string if format_string is not None else "{i}/{total} ({percent_complete}%) in {time_taken} (ETA:{estimated_time_remaining})"
-
         self.callback = callback
+        self.format_callback = format_callback
 
         self.every_x_percent = every_x_percent
         self.next_percent = every_x_percent if ignore_first_iteration else 0
@@ -77,15 +88,7 @@ class ProgressTracker(object):
                 yield item
                 check = self.check(index + 1)
                 if check is not None:
-                    i, total, percent_complete, time_taken, estimated_time_remaining, items_per_second = check
-                    self.callback(self.format_string.format(
-                        i=i,
-                        total=total,
-                        percent_complete=percent_complete,
-                        time_taken=time_taken,
-                        estimated_time_remaining=estimated_time_remaining,
-                        items_per_second=items_per_second
-                    ))
+                    self.callback(self.format_callback(self.format_string, **check))
                     self.times_callback_called += 1
 
     def __enter__(self):
@@ -127,7 +130,14 @@ class ProgressTracker(object):
 
             items_per_second = i / time_taken.total_seconds() if time_taken.total_seconds() != 0 else None
 
-            result = (i, self.total, percent_complete, time_taken, estimated_time_remaining, items_per_second)
+            result = {
+                'i': i,
+                'total': self.total,
+                'percent_complete': percent_complete,
+                'time_taken': time_taken,
+                'estimated_time_remaining': estimated_time_remaining,
+                'items_per_second': items_per_second
+            }
         else:
             result = None
 

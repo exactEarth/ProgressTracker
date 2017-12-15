@@ -1,6 +1,7 @@
 import time
 import unittest
 
+from collections import Counter
 from progress_tracker import track_progress
 
 
@@ -21,6 +22,26 @@ class CustomFormatStrings(unittest.TestCase):
 
         results = list(track_progress((i for i in range(0, NUMBER_OF_ITERATIONS)), every_n_records=5, callback=self.custom_callback, format_string="{i}"))
         self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
+
+
+class CustomFormatFunctions(unittest.TestCase):
+    def setUp(self):
+        self.callback_results = Counter()
+
+    def custom_print_callback(self, message):
+        self.callback_results[message] += 1
+
+    def custom_format_callback(self, format_string, **kwargs):
+        return "Odd" if kwargs['i'] % 2 == 1 else "Even"
+
+    def test_custom_bounded(self):
+        # [5,10...100]
+        NUMBER_OF_ITERATIONS = 101
+
+        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_x_percent=5, callback=self.custom_print_callback, format_callback=self.custom_format_callback))
+        self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
+        self.assertEqual(self.callback_results["Odd"], 10)
+        self.assertEqual(self.callback_results["Even"], 10)
 
 
 class BoundedTests(unittest.TestCase):
