@@ -1,8 +1,9 @@
+from __future__ import print_function
 import time
 import unittest
 
 from collections import Counter
-from progress_tracker import track_progress
+from ee_libs.progress_tracker import track_progress
 
 
 class CustomFormatStrings(unittest.TestCase):
@@ -86,7 +87,7 @@ class BoundedTests(unittest.TestCase):
     def test_every_n_seconds(self):
         NUMBER_OF_ITERATIONS = 2
         SECONDS_BETWEEN_ITERATIONS = 2
-        print "Starting a test that will take {0} seconds".format(NUMBER_OF_ITERATIONS * SECONDS_BETWEEN_ITERATIONS)
+        print("Starting a test that will take {0} seconds".format(NUMBER_OF_ITERATIONS * SECONDS_BETWEEN_ITERATIONS))
         for _ in track_progress(range(1, NUMBER_OF_ITERATIONS + 1), every_n_seconds=1, callback=lambda _: self.increment()):
             time.sleep(SECONDS_BETWEEN_ITERATIONS)
         self.assertEqual(self.callback_count, 2)
@@ -94,7 +95,7 @@ class BoundedTests(unittest.TestCase):
     def test_every_n_seconds_idle(self):
         IDLE_SECONDS_TRIGGER = 2
 
-        print "Starting a test that will take {0} seconds".format((IDLE_SECONDS_TRIGGER * 2) - 1 + (IDLE_SECONDS_TRIGGER + 2))
+        print("Starting a test that will take {0} seconds".format((IDLE_SECONDS_TRIGGER * 2) - 1 + (IDLE_SECONDS_TRIGGER + 2)))
 
         for i in track_progress(range(1, IDLE_SECONDS_TRIGGER * 2), every_n_seconds_idle=IDLE_SECONDS_TRIGGER, callback=lambda _: self.increment()):
             time.sleep(1)
@@ -156,7 +157,7 @@ class UnboundedTests(unittest.TestCase):
     def test_every_n_seconds(self):
         NUMBER_OF_ITERATIONS = 2
         SECONDS_BETWEEN_ITERATIONS = 2
-        print "Starting a test that will take {0} seconds".format(NUMBER_OF_ITERATIONS * SECONDS_BETWEEN_ITERATIONS)
+        print("Starting a test that will take {0} seconds".format(NUMBER_OF_ITERATIONS * SECONDS_BETWEEN_ITERATIONS))
         for _ in track_progress((i for i in range(1, NUMBER_OF_ITERATIONS + 1)), every_n_seconds=1, callback=lambda _: self.increment()):
             time.sleep(SECONDS_BETWEEN_ITERATIONS)
         self.assertEqual(self.callback_count, 2)
@@ -164,7 +165,7 @@ class UnboundedTests(unittest.TestCase):
     def test_every_n_seconds_idle(self):
         IDLE_SECONDS_TRIGGER = 2
 
-        print "Starting a test that will take {0} seconds".format((IDLE_SECONDS_TRIGGER * 2) - 1 + (IDLE_SECONDS_TRIGGER + 2))
+        print("Starting a test that will take {0} seconds".format((IDLE_SECONDS_TRIGGER * 2) - 1 + (IDLE_SECONDS_TRIGGER + 2)))
 
         for i in track_progress((i for i in range(1, IDLE_SECONDS_TRIGGER * 2)), every_n_seconds_idle=IDLE_SECONDS_TRIGGER, callback=lambda _: self.increment()):
             time.sleep(1)
