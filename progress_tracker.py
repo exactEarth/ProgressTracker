@@ -4,8 +4,6 @@ from builtins import object
 from datetime import datetime, timedelta
 
 from ee_libs.timeout import Timeout
-from python_version_backports import MonkeyPatch
-MonkeyPatch.patch_total_seconds()
 
 
 def default_format_callback(format_string, **kwargs):
