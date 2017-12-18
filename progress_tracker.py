@@ -1,4 +1,5 @@
 from __future__ import division, print_function
+from builtins import object
 from datetime import datetime, timedelta
 
 from ee_libs.timeout import Timeout
