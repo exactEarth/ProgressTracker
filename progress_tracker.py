@@ -1,12 +1,13 @@
-from __future__ import division, print_function
-from __future__ import unicode_literals
-from builtins import object
 from datetime import datetime, timedelta
 
 from ee_libs.timeout import Timeout
+from typing import Any, Callable, Dict, Generic, Iterable, Optional, Sized, Type, TypeVar, cast
+from types import TracebackType
+
+T = TypeVar("T")
 
 
-def default_format_callback(format_string, **kwargs):
+def default_format_callback(format_string: str, **kwargs: Optional[str]) -> str:
     i = kwargs["i"]
     total = kwargs["total"]
     if format_string is None:
@@ -18,29 +19,30 @@ def default_format_callback(format_string, **kwargs):
     return format_string.format(**kwargs)
 
 
-class ProgressTracker(object):
+class ProgressTracker(Generic[T]):
     # This is a class that allows you to offload the tracking of progress.
     # It encapsulates a number of common conditions for reporting progress.
     #
     # For example, you often want to print out your processing progress every x percent of completion, but also every y seconds.
     # This class allows you to not have to do all of this tracking in your code. It will call its callback function with a formatted string.
     #
-    def __init__(self, iterable=None,
-                 total=None,
-                 callback=print,
-                 format_callback=default_format_callback,
-                 format_string=None,
-                 every_x_percent=None,
-                 every_n_records=None,
-                 every_n_seconds=None,
-                 every_n_seconds_idle=None,
-                 ignore_first_iteration=True,
-                 last_iteration=False):
+    def __init__(self, iterable: Iterable[T],
+                 total: Optional[int] = None,
+                 callback: Callable[[str], Any] = print,
+                 format_callback: Callable[..., str] = default_format_callback,
+                 format_string: Optional[str] = None,
+                 every_x_percent: Optional[float] = None,
+                 every_n_records: Optional[int] = None,
+                 every_n_seconds: Optional[float] = None,
+                 every_n_seconds_idle: Optional[float] = None,
+                 ignore_first_iteration: bool = True,
+                 last_iteration: bool = False) -> None:
 
         self.iterable = iterable
 
+        self.total: Optional[int]
         try:
-            self.total = len(self.iterable)
+            self.total = len(cast(Sized, self.iterable))
         except TypeError:
             self.total = None
 
@@ -74,14 +76,14 @@ class ProgressTracker(object):
 
         self.last_iteration = last_iteration
 
-        self.start_time = None
-        self.end_time = None
-        self.total_time = None
+        self.start_time: Optional[datetime] = None
+        self.end_time: Optional[datetime] = None
+        self.total_time: Optional[timedelta] = None
 
         self.items_seen = 0
         self.times_callback_called = 0
 
-    def __iter__(self):
+    def __iter__(self) -> Iterable[T]:
         with self:
             for index, item in enumerate(self.iterable):
                 self.items_seen += 1
@@ -91,25 +93,25 @@ class ProgressTracker(object):
                     self.callback(self.format_callback(self.format_string, **check))
                     self.times_callback_called += 1
 
-    def __enter__(self):
+    def __enter__(self) -> None:
         self.start_time = datetime.utcnow()
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(self, exc_type: Optional[Type[Exception]], value: Optional[Exception], traceback: Optional[TracebackType]) -> None:
         self.complete()
 
-    def should_report(self, i):
+    def should_report(self, i: int) -> bool:
         should_report = False
         if self.timeout is not None and self.timeout.is_overdue():
             should_report = True
             self.timeout.reset()
         if self.idle_timeout is not None and self.idle_timeout.is_overdue():
             should_report = True
-        if self.total is not None and self.every_x_percent is not None:
+        if self.total is not None and self.every_x_percent is not None and self.next_percent is not None:
             percent_complete = (i / self.total) * 100
             if percent_complete >= self.next_percent:
                 should_report = True
                 self.next_percent = ((int(percent_complete) // self.every_x_percent) + 1) * self.every_x_percent
-        if self.every_n_records is not None and i >= self.next_record_count:
+        if self.every_n_records is not None and self.next_record_count is not None and i >= self.next_record_count:
             should_report = True
             self.next_record_count = ((i // self.every_n_records) + 1) * self.every_n_records
         if self.total is not None and self.last_iteration and i == self.total:
@@ -118,9 +120,13 @@ class ProgressTracker(object):
         return should_report
 
     # Returns a tuple that contains all of the usual values that you want to print out.
-    def check(self, i):
+    def check(self, i: int) -> Optional[Dict[str, Any]]:
+        assert self.start_time is not None
+        result: Optional[Dict[str, Any]]
         if self.should_report(i):
             time_taken = datetime.utcnow() - self.start_time
+            percent_complete: Optional[float]
+            estimated_time_remaining: Optional[timedelta]
             if self.total is not None:
                 percent_complete = (i / self.total) * 100
                 estimated_time_remaining = timedelta(seconds=((100 - percent_complete) / percent_complete) * time_taken.total_seconds()) if percent_complete != 0 else None
@@ -146,10 +152,11 @@ class ProgressTracker(object):
 
         return result
 
-    def complete(self):
+    def complete(self) -> None:
+        assert self.start_time is not None
         self.end_time = datetime.utcnow()
         self.total_time = self.end_time - self.start_time
 
 
-def track_progress(iterable, **kwargs):
+def track_progress(iterable: Iterable[T], **kwargs: Any) -> ProgressTracker[T]:
     return ProgressTracker(iterable, **kwargs)
