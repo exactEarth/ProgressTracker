@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta
 
-from ee_libs.timeout import Timeout
+from progress_tracker.timeout import Timeout
 from typing import Any, Callable, Dict, Generic, Iterable, Optional, Sized, Type, TypeVar, cast
 from types import TracebackType
 

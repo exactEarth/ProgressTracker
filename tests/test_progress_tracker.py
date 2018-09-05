@@ -2,7 +2,7 @@ import time
 import unittest
 
 from collections import Counter
-from ee_libs.progress_tracker import track_progress
+from progress_tracker import track_progress
 
 
 class CustomFormatStrings(unittest.TestCase):
