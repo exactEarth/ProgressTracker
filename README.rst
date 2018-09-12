@@ -8,7 +8,7 @@ It was originally developed at `exactEarth Ltd`_ . See `this presentation`_ to `
 
 .. _exactEarth Ltd: https://exactearth.com/
 
-Tested with Python 3.4, 3.5, 3.6, 3.7.
+Built and tested with Python 3.6+
 
 .. contents:: Contents
 
