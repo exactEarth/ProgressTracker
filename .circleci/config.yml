@@ -62,4 +62,6 @@ jobs:
             . venv/bin/activate
             mypy --strict progress_tracker
             flake8 --ignore='E501' --exclude=__init__.py progress_tracker
+    docker:
+    - image: circleci/python:3.6
 
