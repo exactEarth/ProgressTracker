@@ -45,3 +45,21 @@ jobs:
             rst-lint --encoding=utf-8 README.rst
     docker:
     - image: circleci/python:3.6
+
+  lint-code:
+    working_directory: ~/code
+    steps:
+    - checkout
+    - run:
+        name: Install lint tools
+        command: |
+            python3 -m venv venv
+            . venv/bin/activate
+            pip install mypy flake8
+    - run:
+        name: Lint
+        command: |
+            . venv/bin/activate
+            mypy --strict progress_tracker
+            flake8 --ignore='E501' --exclude=__init__.py progress_tracker
+
