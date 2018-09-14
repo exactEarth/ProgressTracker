@@ -35,9 +35,7 @@ Sure. First [search the existing issues](https://github.com/exactEarth/ProgressT
 
 ## Design Philosophy
 
-progress_tracker's goal is to be the fastest ISO 8601 parser available for Python. It probably will never support the complete grammar of ISO 8601, but it will be correct for the chosen subset of the grammar. It will also be robust against non-conforming inputs. Beyond that, performance is king. 
-
-That said, some care should still be taken to ensure cross-platform compatibility and maintainability. For example, this means that we do not hand-code assembly instructions for a specific CPUs/architectures, and instead rely on the native C compilers to take advantage of specific hardware. We are not against the idea of platform-specific code in principle, but it would have to be shown to be produce sufficient benefits to warrant the additional maintenance overhead.
+progress_tracker's goal is to provide a minimal syntax for easily adding progress tracking to your single-threaded Python script.
 
 ## How Can I Contribute?
 
@@ -147,7 +145,7 @@ progress_tracker is built with, and tested against, cPython versions 3.6+ (for t
 
 #### Supported Operating Systems
 
-progress_tracker supports running on multiple operating systems, including Windows. Make sure to test changes on both a Windows (MSVC) and Linux (gcc) machine to ensure compatibility.
+progress_tracker supports running on multiple operating systems, including Windows. Make sure to test changes on both a Windows and Linux machine to ensure compatibility.
 
 #### Functional Testing
 
