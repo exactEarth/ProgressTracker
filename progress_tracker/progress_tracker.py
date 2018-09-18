@@ -35,8 +35,8 @@ class ProgressTracker(Generic[T]):
                  every_n_records: Optional[int] = None,
                  every_n_seconds: Optional[float] = None,
                  every_n_seconds_idle: Optional[float] = None,
-                 ignore_first_iteration: bool = True,
-                 last_iteration: bool = False) -> None:
+                 report_first_record: bool = False,
+                 report_last_record: bool = False) -> None:
 
         self.iterable = iterable
 
@@ -66,15 +66,15 @@ class ProgressTracker(Generic[T]):
         self.format_callback = format_callback
 
         self.every_n_percent = every_n_percent
-        self.next_percent = every_n_percent if ignore_first_iteration else 0
+        self.next_percent = 0 if report_first_record else every_n_percent
 
         self.every_n_records = every_n_records
-        self.next_record_count = every_n_records if ignore_first_iteration else 0
+        self.next_record_count = 0 if report_first_record else every_n_records
 
         self.timeout = Timeout(timedelta(seconds=every_n_seconds)) if every_n_seconds is not None else None
         self.idle_timeout = Timeout(timedelta(seconds=every_n_seconds_idle)) if every_n_seconds_idle is not None else None
 
-        self.last_iteration = last_iteration
+        self.report_last_record = report_last_record
 
         self.start_time: Optional[datetime] = None
         self.end_time: Optional[datetime] = None
@@ -114,7 +114,7 @@ class ProgressTracker(Generic[T]):
         if self.every_n_records is not None and self.next_record_count is not None and i >= self.next_record_count:
             should_report = True
             self.next_record_count = ((i // self.every_n_records) + 1) * self.every_n_records
-        if self.total is not None and self.last_iteration and i == self.total:
+        if self.total is not None and self.report_last_record and i == self.total:
             should_report = True
 
         return should_report

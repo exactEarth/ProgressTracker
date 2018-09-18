@@ -63,7 +63,7 @@ class BoundedTests(unittest.TestCase):
         # [0,5,10...100]
         NUMBER_OF_ITERATIONS = 101
 
-        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=5, ignore_first_iteration=False, callback=lambda _: self.increment()))
+        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=5, report_first_record=True, callback=lambda _: self.increment()))
         self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
         self.assertEqual(self.callback_count, 21)
 
@@ -79,7 +79,7 @@ class BoundedTests(unittest.TestCase):
         # [0,5,10...100]
         NUMBER_OF_ITERATIONS = 101
 
-        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_records=5, ignore_first_iteration=False, callback=lambda _: self.increment()))
+        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_records=5, report_first_record=True, callback=lambda _: self.increment()))
         self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
         self.assertEqual(self.callback_count, 21)
 

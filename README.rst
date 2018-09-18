@@ -56,8 +56,8 @@ By changing the parameters passed to ``track_progress``, you can customize how f
         every_n_records: Optional[int] = None, # Reports every n records
         every_n_seconds: Optional[float] = None, # Reports every n seconds
         every_n_seconds_idle: Optional[float] = None, # Report every n seconds, but only if there hasn’t been any progress. Useful for infinite streams
-        ignore_first_iteration: bool = True, # Don’t report on the first iteration
-        last_iteration: bool = False # Report after the last iteration
+        report_first_record: bool = False, # Report after the first record
+        report_last_record: bool = False # Report after the last record
         ) -> None
 
 Examples
