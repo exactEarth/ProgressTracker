@@ -7,14 +7,13 @@ from types import TracebackType
 T = TypeVar("T")
 
 
-def default_format_callback(format_string: str, **kwargs: Optional[str]) -> str:
+def default_format_callback(**kwargs: Optional[str]) -> str:
     i = kwargs["i"]
     total = kwargs["total"]
-    if format_string is None:
-        if total is None or i == total:
-            format_string = "{i} in {time_taken}"
-        else:
-            format_string = "{i}/{total} ({percent_complete}%) in {time_taken} (Time left: {estimated_time_remaining})"
+    if total is None or i == total:
+        format_string = "{i} in {time_taken}"
+    else:
+        format_string = "{i}/{total} ({percent_complete}%) in {time_taken} (Time left: {estimated_time_remaining})"
 
     return format_string.format(**kwargs)
 
@@ -30,7 +29,6 @@ class ProgressTracker(Generic[T]):
                  total: Optional[int] = None,
                  callback: Callable[[str], Any] = print,
                  format_callback: Callable[..., str] = default_format_callback,
-                 format_string: Optional[str] = None,
                  every_n_percent: Optional[float] = None,
                  every_n_records: Optional[int] = None,
                  every_n_seconds: Optional[float] = None,
@@ -49,16 +47,7 @@ class ProgressTracker(Generic[T]):
         if self.total is None and total is not None:
             self.total = total
 
-        self.format_string = format_string
         if self.total is None:
-            length_related_kwargs = ["total", "percent_complete", "estimated_time_remaining"]
-            if self.format_string is not None:
-                invalid_args = [length_related_kwarg for length_related_kwarg in length_related_kwargs if "{{{0}}}".format(length_related_kwarg) in self.format_string]
-                if len(invalid_args) > 0:
-                    invalid_arg_strings = ["'{{{0}}}'".format(invalid_arg) for invalid_arg in invalid_args]
-                    proper_grammar = ", ".join(invalid_arg_strings[:-1]) + ', nor {0}'.format(invalid_arg_strings[-1]) if len(invalid_arg_strings) > 1 else invalid_arg_strings[0]
-                    raise Exception("Format string cannot include {0} if total length is not available.".format(proper_grammar))
-
             if every_n_percent is not None:
                 raise Exception("Cannot ask to report 'every_n_percent' if total length is not available")
 
@@ -90,7 +79,7 @@ class ProgressTracker(Generic[T]):
                 yield item
                 check = self.check(index + 1)
                 if check is not None:
-                    self.callback(self.format_callback(self.format_string, **check))
+                    self.callback(self.format_callback(**check))
                     self.times_callback_called += 1
 
     def __enter__(self) -> None:

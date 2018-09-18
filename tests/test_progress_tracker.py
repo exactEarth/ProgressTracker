@@ -13,14 +13,14 @@ class CustomFormatStrings(unittest.TestCase):
         # [5,10...100]
         NUMBER_OF_ITERATIONS = 101
 
-        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=5, callback=self.custom_callback, format_string="{i}"))
+        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=5, callback=self.custom_callback, format_callback=lambda **kwargs: "{i}".format(**kwargs)))
         self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
 
     def test_custom_unbounded(self):
         # [5,10...100]
         NUMBER_OF_ITERATIONS = 101
 
-        results = list(track_progress((i for i in range(0, NUMBER_OF_ITERATIONS)), every_n_records=5, callback=self.custom_callback, format_string="{i}"))
+        results = list(track_progress((i for i in range(0, NUMBER_OF_ITERATIONS)), every_n_records=5, callback=self.custom_callback, format_callback=lambda **kwargs: "{i}".format(**kwargs)))
         self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
 
 
@@ -31,7 +31,7 @@ class CustomFormatFunctions(unittest.TestCase):
     def custom_print_callback(self, message):
         self.callback_results[message] += 1
 
-    def custom_format_callback(self, format_string, **kwargs):
+    def custom_format_callback(self, **kwargs):
         return "Odd" if kwargs['i'] % 2 == 1 else "Even"
 
     def test_custom_bounded(self):
@@ -182,10 +182,7 @@ class UnboundedTests(unittest.TestCase):
         self.assertEqual(self.callback_count, 19)
 
     def test_format_strings(self):
-        with self.assertRaises(Exception):
-            track_progress((i for i in range(0, 100)), format_string="{percent_complete}", every_n_records=11, callback=lambda _: self.increment())
-
-        track_progress((i for i in range(0, 100)), total=100, format_string="{percent_complete}", every_n_records=11, callback=lambda _: self.increment())
+        track_progress((i for i in range(0, 100)), total=100, format_callback=lambda **kwargs: "{percent_complete}".format(**kwargs), every_n_records=11, callback=lambda _: self.increment())
 
 
 if __name__ == '__main__':
