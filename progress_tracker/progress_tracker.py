@@ -31,7 +31,7 @@ class ProgressTracker(Generic[T]):
                  callback: Callable[[str], Any] = print,
                  format_callback: Callable[..., str] = default_format_callback,
                  format_string: Optional[str] = None,
-                 every_x_percent: Optional[float] = None,
+                 every_n_percent: Optional[float] = None,
                  every_n_records: Optional[int] = None,
                  every_n_seconds: Optional[float] = None,
                  every_n_seconds_idle: Optional[float] = None,
@@ -59,14 +59,14 @@ class ProgressTracker(Generic[T]):
                     proper_grammar = ", ".join(invalid_arg_strings[:-1]) + ', nor {0}'.format(invalid_arg_strings[-1]) if len(invalid_arg_strings) > 1 else invalid_arg_strings[0]
                     raise Exception("Format string cannot include {0} if total length is not available.".format(proper_grammar))
 
-            if every_x_percent is not None:
-                raise Exception("Cannot ask to report 'every_x_percent' if total length is not available")
+            if every_n_percent is not None:
+                raise Exception("Cannot ask to report 'every_n_percent' if total length is not available")
 
         self.callback = callback
         self.format_callback = format_callback
 
-        self.every_x_percent = every_x_percent
-        self.next_percent = every_x_percent if ignore_first_iteration else 0
+        self.every_n_percent = every_n_percent
+        self.next_percent = every_n_percent if ignore_first_iteration else 0
 
         self.every_n_records = every_n_records
         self.next_record_count = every_n_records if ignore_first_iteration else 0
@@ -106,11 +106,11 @@ class ProgressTracker(Generic[T]):
             self.timeout.reset()
         if self.idle_timeout is not None and self.idle_timeout.is_overdue():
             should_report = True
-        if self.total is not None and self.every_x_percent is not None and self.next_percent is not None:
+        if self.total is not None and self.every_n_percent is not None and self.next_percent is not None:
             percent_complete = (i / self.total) * 100
             if percent_complete >= self.next_percent:
                 should_report = True
-                self.next_percent = ((int(percent_complete) // self.every_x_percent) + 1) * self.every_x_percent
+                self.next_percent = ((int(percent_complete) // self.every_n_percent) + 1) * self.every_n_percent
         if self.every_n_records is not None and self.next_record_count is not None and i >= self.next_record_count:
             should_report = True
             self.next_record_count = ((i // self.every_n_records) + 1) * self.every_n_records

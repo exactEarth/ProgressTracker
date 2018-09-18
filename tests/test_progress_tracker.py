@@ -13,7 +13,7 @@ class CustomFormatStrings(unittest.TestCase):
         # [5,10...100]
         NUMBER_OF_ITERATIONS = 101
 
-        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_x_percent=5, callback=self.custom_callback, format_string="{i}"))
+        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=5, callback=self.custom_callback, format_string="{i}"))
         self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
 
     def test_custom_unbounded(self):
@@ -38,7 +38,7 @@ class CustomFormatFunctions(unittest.TestCase):
         # [5,10...100]
         NUMBER_OF_ITERATIONS = 101
 
-        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_x_percent=5, callback=self.custom_print_callback, format_callback=self.custom_format_callback))
+        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=5, callback=self.custom_print_callback, format_callback=self.custom_format_callback))
         self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
         self.assertEqual(self.callback_results["Odd"], 10)
         self.assertEqual(self.callback_results["Even"], 10)
@@ -51,19 +51,19 @@ class BoundedTests(unittest.TestCase):
     def increment(self):
         self.callback_count += 1
 
-    def test_every_x_percent(self):
+    def test_every_n_percent(self):
         # [5,10...100]
         NUMBER_OF_ITERATIONS = 101
 
-        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_x_percent=5, callback=lambda _: self.increment()))
+        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=5, callback=lambda _: self.increment()))
         self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
         self.assertEqual(self.callback_count, 20)
 
-    def test_every_x_percent_while_including_first(self):
+    def test_every_n_percent_while_including_first(self):
         # [0,5,10...100]
         NUMBER_OF_ITERATIONS = 101
 
-        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_x_percent=5, ignore_first_iteration=False, callback=lambda _: self.increment()))
+        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=5, ignore_first_iteration=False, callback=lambda _: self.increment()))
         self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
         self.assertEqual(self.callback_count, 21)
 
@@ -104,17 +104,17 @@ class BoundedTests(unittest.TestCase):
                 time.sleep(IDLE_SECONDS_TRIGGER + 2)
         self.assertEqual(self.callback_count, 1)
 
-    def test_every_x_percent_every_y_records(self):
+    def test_every_n_percent_every_y_records(self):
         NUMBER_OF_ITERATIONS = 100
 
-        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_x_percent=10, every_n_records=11, callback=lambda _: self.increment()))
+        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=10, every_n_records=11, callback=lambda _: self.increment()))
         self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
         self.assertEqual(self.callback_count, 19)
 
     def test_record_keeping(self):
         NUMBER_OF_ITERATIONS = 100
 
-        pt = track_progress(range(0, NUMBER_OF_ITERATIONS), every_x_percent=10, every_n_records=11, callback=lambda _: self.increment())
+        pt = track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=10, every_n_records=11, callback=lambda _: self.increment())
         results = list(pt)
         self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
         self.assertEqual(len(results), pt.items_seen)
@@ -132,16 +132,16 @@ class UnboundedTests(unittest.TestCase):
     def increment(self):
         self.callback_count += 1
 
-    def test_every_x_percent(self):
+    def test_every_n_percent(self):
         # [5,10...100]
         NUMBER_OF_ITERATIONS = 101
 
-        # every_x_percent doesn't make sense when you don't know the size (because it is a generator)
+        # every_n_percent doesn't make sense when you don't know the size (because it is a generator)
         with self.assertRaises(Exception):
-            track_progress((i for i in range(0, NUMBER_OF_ITERATIONS)), every_x_percent=5, callback=lambda _: self.increment())
+            track_progress((i for i in range(0, NUMBER_OF_ITERATIONS)), every_n_percent=5, callback=lambda _: self.increment())
 
         # But if you happen to know the size a priori, you can pass it in
-        results = list(track_progress((i for i in range(0, NUMBER_OF_ITERATIONS)), total=NUMBER_OF_ITERATIONS, every_x_percent=5, callback=lambda _: self.increment()))
+        results = list(track_progress((i for i in range(0, NUMBER_OF_ITERATIONS)), total=NUMBER_OF_ITERATIONS, every_n_percent=5, callback=lambda _: self.increment()))
         self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
         self.assertEqual(self.callback_count, 20)
 
@@ -174,10 +174,10 @@ class UnboundedTests(unittest.TestCase):
                 time.sleep(IDLE_SECONDS_TRIGGER + 2)
         self.assertEqual(self.callback_count, 1)
 
-    def test_every_x_percent_every_y_records(self):
+    def test_every_n_percent_every_y_records(self):
         NUMBER_OF_ITERATIONS = 100
 
-        results = list(track_progress((i for i in range(0, NUMBER_OF_ITERATIONS)), total=NUMBER_OF_ITERATIONS, every_x_percent=10, every_n_records=11, callback=lambda _: self.increment()))
+        results = list(track_progress((i for i in range(0, NUMBER_OF_ITERATIONS)), total=NUMBER_OF_ITERATIONS, every_n_percent=10, every_n_records=11, callback=lambda _: self.increment()))
         self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
         self.assertEqual(self.callback_count, 19)
 
