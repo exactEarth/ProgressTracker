@@ -205,6 +205,26 @@ Simple cases can also be done using a lambda:
     Got one!
     Got one!
 
+Report values available
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The following values are available in every report for use in the ``format_callback``:
+
+.. table::
+   :widths: auto
+
+   ============================== =================== =======================================================================================================================================
+   Value                          Type                Meaning
+   ============================== =================== =======================================================================================================================================
+   ``{records_seen}``             int                 The number of records processed so far.
+   ``{total}``                    Optional[int]       The total of records in the iterable, if known. Else ``None``
+   ``{percent_complete}``         Optional[float]     The percentage of records processed so far. ``None`` if ``{total}`` is ``None`` or ``records_seen`` = 0
+   ``{time_taken}``               timedelta           The amount of time that processing has taken thus far.
+   ``{estimated_time_remaining}`` Optional[timedelta] The estimated amount of time needed in order to process the rest of the records (simple linear estimate). ``None`` if total is ``None``
+   ``{items_per_second}``         Optional[float]     The number of records processed so far / the number of seconds elapsed. ``None`` if no time have elapsed.
+   ``{idle_time}``                timedelta           The amount of idle time between the previous record's processing and this record's arrival.
+   ============================== =================== =======================================================================================================================================
+
 Customizing the print behaviour
 -------------------------------
 
