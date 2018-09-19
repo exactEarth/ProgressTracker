@@ -50,8 +50,7 @@ By changing the parameters passed to ``track_progress``, you can customize how f
         iterable: Iterable[T], # The iterable to iterate over
         total: Optional[int] = None, # Override for the total message count, defaults to len(iterable)
         callback: Callable[[str], Any] = print, # A function (f(str) -> None) that gets called each time a condition matches
-        format_callback: Callable[..., str] = default_format_callback, # A function (f(str) -> str) that formats the progress values into a string.
-        format_string: Optional[str] = None, # An override for the default format strings.
+        format_callback: Callable[[Dict[str, Any], Set[str]], str] = default_format_callback, # A function (f(str) -> str) that formats the progress values into a string.
         every_n_percent: Optional[float] = None, # Reports after every n percent
         every_n_records: Optional[int] = None, # Reports every n records
         every_n_seconds: Optional[float] = None, # Reports every n seconds
@@ -170,20 +169,34 @@ This can be used to perform advanced formatting, or to add internationalization/
 
 .. code:: python
 
-    def format_en_francais(**kwargs):
-        i = kwargs["i"]
-        total = kwargs["total"]
-        if format_string is None:
-            if total is None or i == total:
-                format_string = "{i} messages traités en {time_taken}"
-            else:
-                format_string = "{i}/{total} messages traités en {time_taken} (temps restant: {estimated_time_remaining})"
-        return format_string.format(**kwargs)
+    def format_en_francais(report: Dict[str, Any], reasons: Set[str]):
+        i = report["i"]
+        total = report["total"]
+        if total is None or i == total:
+            format_string = "{i} messages traités en {time_taken}"
+        else:
+            format_string = "{i}/{total} messages traités en {time_taken} (temps restant: {estimated_time_remaining})"
+        return format_string.format(**report)
 
     for poste in track_progress(postes, every_n_records=100, format_callback=format_en_francais):
         traité(poste)
 
 (Veuillez excuser toute erreur en français. C'est le résultat de Google Translate.)
+
+Simple cases can also be done using a lambda:
+
+.. code:: python
+
+    >>> from progress_tracker import track_progress
+    >>>
+    >>> for _ in track_progress(list(range(5)), every_n_records=1, format_callback=lambda **kwargs: "Got one!"):
+    ...     continue
+    ...
+    Got one!
+    Got one!
+    Got one!
+    Got one!
+    Got one!
 
 Customizing the print behaviour
 -------------------------------

@@ -121,7 +121,7 @@ Perhaps the easiest way to demonstrate the terminology, is to simply use the ter
 
 `track_progress` reports the progress of processing an **iterable** (or **stream**) of **records**.
 
-Progress **conditions** are **met** which **trigger** the **creation** of **reports**. By default a **report** causes a message to be printed to `stdout`.
+Progress **conditions** are **met** which **trigger** the **creation** of **reports**. By default, a **report** causes a message to be printed to `stdout`.
 
 
 #### Coding Style
