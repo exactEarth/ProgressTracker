@@ -71,6 +71,21 @@ class BoundedTests(unittest.TestCase):
     def increment(self):
         self.callback_count += 1
 
+    def test_empty_iterable(self):
+        # []
+        NUMBER_OF_ITERATIONS = 0
+
+        results = list(track_progress(range(0, NUMBER_OF_ITERATIONS),
+                                      every_n_percent=0,
+                                      every_n_records=0,
+                                      every_n_seconds=0,
+                                      every_n_seconds_idle=0,
+                                      report_first_record=True,
+                                      report_last_record=True,
+                                      callback=lambda _: self.increment()))
+        self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
+        self.assertEqual(self.callback_count, 0)
+
     def test_every_n_percent(self):
         # [5,10...100]
         NUMBER_OF_ITERATIONS = 101
@@ -155,6 +170,21 @@ class UnboundedTests(unittest.TestCase):
 
     def increment(self):
         self.callback_count += 1
+
+    def test_empty_iterable(self):
+        # []
+        NUMBER_OF_ITERATIONS = 0
+
+        results = list(track_progress((i for i in range(0, NUMBER_OF_ITERATIONS)),
+                                      #   every_n_percent=0,
+                                      every_n_records=0,
+                                      every_n_seconds=0,
+                                      every_n_seconds_idle=0,
+                                      report_first_record=True,
+                                      report_last_record=True,
+                                      callback=lambda _: self.increment()))
+        self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
+        self.assertEqual(self.callback_count, 0)
 
     def test_every_n_percent(self):
         # [5,10...100]

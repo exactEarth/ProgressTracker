@@ -156,8 +156,15 @@ As seen in the previous example, you can combine multiple conditions together to
 
 Each of the conditions are combined using an OR operator, meaning that if any condition is met, a report is created.
 
-At most a single report is created per processed record.
 Even if multiple conditions are met simultaneously, only a single report will be created.
+
+Report Creation Invariants
+--------------------------
+
+Report creation observes two invariants:
+
+1. At most a single report is created per processed record.
+2. Reports are only created in response to a record being processed.
 
 Customizing the report formatting / Internationalization
 --------------------------------------------------------
