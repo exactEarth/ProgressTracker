@@ -44,6 +44,26 @@ class CustomFormatFunctions(unittest.TestCase):
         self.assertEqual(self.callback_results["Even"], 10)
 
 
+class IterateWithDelays(object):
+    def __init__(self, iterable, gaps_every_n_records=2, gap_seconds=5):
+        self.iterable = iterable
+        self.gaps_every_n_records = gaps_every_n_records
+        self.gap_seconds = gap_seconds
+
+    def __len__(self):
+        return len(self.iterable)
+
+    def __iter__(self):
+        for i, _ in enumerate(self.iterable):
+            if i % self.gaps_every_n_records == self.gaps_every_n_records - 1:
+                time.sleep(self.gap_seconds)
+            yield i
+
+
+def iterate_with_delays(*args, **kwargs):
+    return IterateWithDelays(*args, **kwargs)
+
+
 class BoundedTests(unittest.TestCase):
     def setUp(self):
         self.callback_count = 0
@@ -94,14 +114,11 @@ class BoundedTests(unittest.TestCase):
     def test_every_n_seconds_idle(self):
         IDLE_SECONDS_TRIGGER = 2
 
-        print("Starting a test that will take {0} seconds".format((IDLE_SECONDS_TRIGGER * 2) - 1 + (IDLE_SECONDS_TRIGGER + 2)))
-
-        for i in track_progress(range(1, IDLE_SECONDS_TRIGGER * 2), every_n_seconds_idle=IDLE_SECONDS_TRIGGER, callback=lambda _: self.increment()):
-            time.sleep(1)
-            if i == 1:
-                self.assertEqual(self.callback_count, 0)
-            elif i == 2:
-                time.sleep(IDLE_SECONDS_TRIGGER + 2)
+        print("Starting a test that will take {0} seconds".format(IDLE_SECONDS_TRIGGER + 2))
+        for _ in track_progress(iterate_with_delays(range(1, 4), gaps_every_n_records=2, gap_seconds=IDLE_SECONDS_TRIGGER + 2),
+                                every_n_seconds_idle=IDLE_SECONDS_TRIGGER,
+                                callback=lambda _: self.increment()):
+            continue
         self.assertEqual(self.callback_count, 1)
 
     def test_every_n_percent_every_y_records(self):
@@ -117,9 +134,9 @@ class BoundedTests(unittest.TestCase):
         pt = track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=10, every_n_records=11, callback=lambda _: self.increment())
         results = list(pt)
         self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
-        self.assertEqual(len(results), pt.items_seen)
+        self.assertEqual(len(results), pt.records_seen)
         self.assertEqual(self.callback_count, 19)
-        self.assertEqual(self.callback_count, pt.times_callback_called)
+        self.assertEqual(self.callback_count, pt.reports_raised)
         self.assertNotEqual(pt.start_time, None)
         self.assertNotEqual(pt.end_time, None)
         self.assertNotEqual(pt.total_time, None)
@@ -164,14 +181,11 @@ class UnboundedTests(unittest.TestCase):
     def test_every_n_seconds_idle(self):
         IDLE_SECONDS_TRIGGER = 2
 
-        print("Starting a test that will take {0} seconds".format((IDLE_SECONDS_TRIGGER * 2) - 1 + (IDLE_SECONDS_TRIGGER + 2)))
-
-        for i in track_progress((i for i in range(1, IDLE_SECONDS_TRIGGER * 2)), every_n_seconds_idle=IDLE_SECONDS_TRIGGER, callback=lambda _: self.increment()):
-            time.sleep(1)
-            if i == 1:
-                self.assertEqual(self.callback_count, 0)
-            elif i == 2:
-                time.sleep(IDLE_SECONDS_TRIGGER + 2)
+        print("Starting a test that will take {0} seconds".format(IDLE_SECONDS_TRIGGER + 2))
+        for _ in track_progress(iterate_with_delays((i for i in range(1, 4)), gaps_every_n_records=2, gap_seconds=IDLE_SECONDS_TRIGGER + 2),
+                                every_n_seconds_idle=IDLE_SECONDS_TRIGGER,
+                                callback=lambda _: self.increment()):
+            continue
         self.assertEqual(self.callback_count, 1)
 
     def test_every_n_percent_every_y_records(self):
