@@ -6,7 +6,7 @@ class Timeout(object):
     def __init__(self, delta: timedelta, start_time: Optional[datetime] = None) -> None:
         self.delta = delta
         self.start_time = start_time if start_time else datetime.utcnow()
-        self.stop_time = None
+        self.stop_time: Optional[datetime] = None
         self.deadline = self.start_time + self.delta
 
     def reset(self) -> None:
