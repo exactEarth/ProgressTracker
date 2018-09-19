@@ -50,14 +50,13 @@ By changing the parameters passed to ``track_progress``, you can customize how f
         iterable: Iterable[T], # The iterable to iterate over
         total: Optional[int] = None, # Override for the total message count, defaults to len(iterable)
         callback: Callable[[str], Any] = print, # A function (f(str) -> None) that gets called each time a condition matches
-        format_callback: Callable[..., str] = default_format_callback, # A function (f(str) -> str) that formats the progress values into a string.
-        format_string: Optional[str] = None, # An override for the default format strings.
-        every_x_percent: Optional[float] = None, # Reports after every x percent
+        format_callback: Callable[[Dict[str, Any], Set[str]], str] = default_format_callback, # A function (f(str) -> str) that formats the progress values into a string.
+        every_n_percent: Optional[float] = None, # Reports after every n percent
         every_n_records: Optional[int] = None, # Reports every n records
         every_n_seconds: Optional[float] = None, # Reports every n seconds
         every_n_seconds_idle: Optional[float] = None, # Report every n seconds, but only if there hasn’t been any progress. Useful for infinite streams
-        ignore_first_iteration: bool = True, # Don’t report on the first iteration
-        last_iteration: bool = False # Report after the last iteration
+        report_first_record: bool = False, # Report after the first record
+        report_last_record: bool = False # Report after the last record
         ) -> None
 
 Examples
@@ -89,12 +88,12 @@ The ``every_n_records`` parameter will trigger a report after every nth record i
 Print after every x percent of records are processed
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-The ``every_x_percent`` parameter will trigger a report after every xth percent of records are processed. 
+The ``every_n_percent`` parameter will trigger a report after every nth percent of records are processed. 
 
 .. code:: python
 
     >>> from progress_tracker import track_progress
-    >>> for _ in track_progress(list(range(1000)), every_x_percent=10):
+    >>> for _ in track_progress(list(range(1000)), every_n_percent=10):
     ...     continue
     ...
     100/1000 (10.0%) in 0:00:00.000114 (Time left: 0:00:00.001026)
@@ -108,10 +107,10 @@ The ``every_x_percent`` parameter will trigger a report after every xth percent 
     900/1000 (90.0%) in 0:00:00.000979 (Time left: 0:00:00.000109)
     1000 in 0:00:00.001086
 
-``every_x_percent`` only works for bounded iterables. For unbounded iterables (ex. streams), ``every_x_percent`` cannot be used and will raise an ``Exception``.
+``every_n_percent`` only works for bounded iterables. For unbounded iterables (ex. streams), ``every_n_percent`` cannot be used and will raise an ``Exception``.
 
 At most a single report is generated per processed record. Even if processing of a single record would meet the conditions multiple times 
-(ex. if ``every_x_percent=10``, but there are only 2 records, then processing each record causes 50%, or 5 * 10%, progress), only a single report is created (containing the latest values).
+(ex. if ``every_n_percent=10``, but there are only 2 records, then processing each record causes 50%, or 5 * 10%, progress), only a single report is created (containing the latest values).
 
 Print every n records OR every n seconds during processing
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -157,8 +156,15 @@ As seen in the previous example, you can combine multiple conditions together to
 
 Each of the conditions are combined using an OR operator, meaning that if any condition is met, a report is created.
 
-At most a single report is created per processed record.
 Even if multiple conditions are met simultaneously, only a single report will be created.
+
+Report Creation Invariants
+--------------------------
+
+Report creation observes two invariants:
+
+1. At most a single report is created per processed record.
+2. Reports are only created in response to a record being processed.
 
 Customizing the report formatting / Internationalization
 --------------------------------------------------------
@@ -170,20 +176,54 @@ This can be used to perform advanced formatting, or to add internationalization/
 
 .. code:: python
 
-    def format_en_francais(**kwargs):
-        i = kwargs["i"]
-        total = kwargs["total"]
-        if format_string is None:
-            if total is None or i == total:
-                format_string = "{i} messages traités en {time_taken}"
-            else:
-                format_string = "{i}/{total} messages traités en {time_taken} (temps restant: {estimated_time_remaining})"
-        return format_string.format(**kwargs)
+    def format_en_francais(report: Dict[str, Any], reasons: Set[str]):
+        i = report["i"]
+        total = report["total"]
+        if total is None or i == total:
+            format_string = "{i} messages traités en {time_taken}"
+        else:
+            format_string = "{i}/{total} messages traités en {time_taken} (temps restant: {estimated_time_remaining})"
+        return format_string.format(**report)
 
     for poste in track_progress(postes, every_n_records=100, format_callback=format_en_francais):
         traité(poste)
 
 (Veuillez excuser toute erreur en français. C'est le résultat de Google Translate.)
+
+Simple cases can also be done using a lambda:
+
+.. code:: python
+
+    >>> from progress_tracker import track_progress
+    >>>
+    >>> for _ in track_progress(list(range(5)), every_n_records=1, format_callback=lambda **kwargs: "Got one!"):
+    ...     continue
+    ...
+    Got one!
+    Got one!
+    Got one!
+    Got one!
+    Got one!
+
+Report values available
+^^^^^^^^^^^^^^^^^^^^^^^
+
+The following values are available in every report for use in the ``format_callback``:
+
+.. table::
+   :widths: auto
+
+   ============================== =================== =======================================================================================================================================
+   Value                          Type                Meaning
+   ============================== =================== =======================================================================================================================================
+   ``{records_seen}``             int                 The number of records processed so far.
+   ``{total}``                    Optional[int]       The total of records in the iterable, if known. Else ``None``
+   ``{percent_complete}``         Optional[float]     The percentage of records processed so far. ``None`` if ``{total}`` is ``None`` or ``records_seen`` = 0
+   ``{time_taken}``               timedelta           The amount of time that processing has taken thus far.
+   ``{estimated_time_remaining}`` Optional[timedelta] The estimated amount of time needed in order to process the rest of the records (simple linear estimate). ``None`` if total is ``None``
+   ``{items_per_second}``         Optional[float]     The number of records processed so far / the number of seconds elapsed. ``None`` if no time have elapsed.
+   ``{idle_time}``                timedelta           The amount of idle time between the previous record's processing and this record's arrival.
+   ============================== =================== =======================================================================================================================================
 
 Customizing the print behaviour
 -------------------------------
