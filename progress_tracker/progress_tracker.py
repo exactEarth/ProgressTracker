@@ -6,11 +6,18 @@ from types import TracebackType
 
 T = TypeVar("T")
 
+EVERY_N_PERCENT = "every_n_percent"
+EVERY_N_RECORDS = "every_n_records"
+EVERY_N_SECONDS = "every_n_seconds"
+EVERY_N_SECONDS_IDLE = "every_n_seconds_idle"
+REPORT_FIRST_RECORD = "report_first_record"
+REPORT_LAST_RECORD = "report_last_record"
+
 
 def default_format_callback(report: Dict[str, Any], reasons: Set[str]) -> str:
     total = report["total"]
     idle_message = " (After being idle for {idle_time})" if "every_n_seconds_idle" in reasons else ""
-    if total is None or "report_last_record" in reasons:
+    if total is None or REPORT_LAST_RECORD in reasons:
         format_string = "{records_seen} in {time_taken}" + idle_message
     else:
         format_string = "{records_seen}/{total} ({percent_complete}%) in {time_taken} (Time left: {estimated_time_remaining})" + idle_message
@@ -97,7 +104,7 @@ class ProgressTracker(Generic[T]):
                     self.idle_timeout.reset()
 
             if self.report_last_record and self.records_seen > 0 and not self.report_raised_this_record:  # Ensure that we don't break the "Report Creation Invariants".
-                self.raise_report(set(["report_last_record"]))
+                self.raise_report(set([REPORT_LAST_RECORD]))
 
     def __enter__(self) -> None:
         self.start_time = datetime.utcnow()
@@ -115,23 +122,23 @@ class ProgressTracker(Generic[T]):
         reasons_to_report: Set[str] = set()
 
         if self.report_first_record and self.records_seen == 1:
-            reasons_to_report.add("report_first_record")
+            reasons_to_report.add(REPORT_FIRST_RECORD)
 
         if self.idle_timeout is not None and self.idle_timeout.is_overdue():
-            reasons_to_report.add("every_n_seconds_idle")
+            reasons_to_report.add(EVERY_N_SECONDS_IDLE)
 
         if self.timeout is not None and self.timeout.is_overdue():
-            reasons_to_report.add("every_n_seconds")
+            reasons_to_report.add(EVERY_N_SECONDS)
             self.timeout.reset()
 
         if self.total is not None and self.every_n_percent is not None and self.next_percent is not None:
             percent_complete: float = (self.records_seen / self.total) * 100
             if percent_complete >= self.next_percent:
-                reasons_to_report.add("every_n_percent")
+                reasons_to_report.add(EVERY_N_PERCENT)
                 self.next_percent = ((int(percent_complete) // self.every_n_percent) + 1) * self.every_n_percent
 
         if self.every_n_records is not None and self.next_record_count is not None and self.records_seen >= self.next_record_count:
-            reasons_to_report.add("every_n_records")
+            reasons_to_report.add(EVERY_N_RECORDS)
             self.next_record_count = ((self.records_seen // self.every_n_records) + 1) * self.every_n_records
 
         return reasons_to_report
