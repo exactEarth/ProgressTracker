@@ -57,14 +57,15 @@ class ProgressTracker(Generic[T]):
         self.format_callback = format_callback
 
         self.every_n_percent = every_n_percent
-        self.next_percent = 0 if report_first_record else every_n_percent
+        self.next_percent = every_n_percent
 
         self.every_n_records = every_n_records
-        self.next_record_count = 0 if report_first_record else every_n_records
+        self.next_record_count = every_n_records
 
         self.timeout = Timeout(timedelta(seconds=every_n_seconds)) if every_n_seconds is not None else None
         self.idle_timeout = Timeout(timedelta(seconds=every_n_seconds_idle)) if every_n_seconds_idle is not None else None
 
+        self.report_first_record = report_first_record
         self.report_last_record = report_last_record
 
         self.start_time: Optional[datetime] = None
@@ -108,6 +109,10 @@ class ProgressTracker(Generic[T]):
 
     def should_report(self) -> Set[str]:
         reasons_to_report: Set[str] = set()
+
+        if self.report_first_record and self.records_seen == 1:
+            reasons_to_report.add("report_first_record")
+
         if self.timeout is not None and self.timeout.is_overdue():
             reasons_to_report.add("every_n_seconds")
             self.timeout.reset()
@@ -153,6 +158,8 @@ class ProgressTracker(Generic[T]):
 
     def complete(self) -> None:
         assert self.start_time is not None
+        if self.total is None and self.report_last_record:  # ie. Unbounded iterable
+            self.raise_report(set(["report_last_record"]))
         self.end_time = datetime.utcnow()
         self.total_time = self.end_time - self.start_time
 
