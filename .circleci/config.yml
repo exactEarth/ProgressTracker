@@ -93,7 +93,7 @@ jobs:
         name: Install build tools
         command: |
           . venv/bin/activate
-          pip install wheel
+          pip install wheel twine
     - run:
         name: create packages
         command: |
