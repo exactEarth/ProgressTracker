@@ -54,7 +54,8 @@ By changing the parameters passed to ``track_progress``, you can customize how f
         every_n_percent: Optional[float] = None, # Reports after every n percent
         every_n_records: Optional[int] = None, # Reports every n records
         every_n_seconds: Optional[float] = None, # Reports every n seconds
-        every_n_seconds_idle: Optional[float] = None, # Report every n seconds, but only if there hasn’t been any progress. Useful for infinite streams
+        every_n_seconds_idle: Optional[float] = None, # Report if there has not been a record processed in the past n seconds. Useful for infinite streams.
+        every_n_seconds_since_report: Optional[float] = None, # Report if there hasn’t been any report in the past n seconds.
         report_first_record: bool = False, # Report after the first record
         report_last_record: bool = False # Report after the last record
         ) -> None

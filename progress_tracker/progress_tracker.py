@@ -11,6 +11,7 @@ EVERY_N_PERCENT = "every_n_percent"
 EVERY_N_RECORDS = "every_n_records"
 EVERY_N_SECONDS = "every_n_seconds"
 EVERY_N_SECONDS_IDLE = "every_n_seconds_idle"
+EVERY_N_SECONDS_SINCE_REPORT = "every_n_seconds_since_report"
 REPORT_FIRST_RECORD = "report_first_record"
 REPORT_LAST_RECORD = "report_last_record"
 
@@ -41,6 +42,7 @@ class ProgressTracker(Generic[T]):
                  every_n_records: Optional[int] = None,
                  every_n_seconds: Optional[float] = None,
                  every_n_seconds_idle: Optional[float] = None,
+                 every_n_seconds_since_report: Optional[float] = None,
                  report_first_record: bool = False,
                  report_last_record: bool = False) -> None:
 
@@ -69,6 +71,7 @@ class ProgressTracker(Generic[T]):
 
         self.timeout = Timeout(timedelta(seconds=every_n_seconds)) if every_n_seconds is not None else None
         self.idle_timeout = Timeout(timedelta(seconds=every_n_seconds_idle)) if every_n_seconds_idle is not None else None
+        self.last_report_timeout = Timeout(timedelta(seconds=every_n_seconds_since_report)) if every_n_seconds_since_report is not None else None
 
         self.report_first_record = report_first_record
         self.report_last_record = report_last_record
@@ -118,6 +121,8 @@ class ProgressTracker(Generic[T]):
         self.callback(self.format_callback(self.create_report(), reasons_to_report))
         self.reports_raised += 1
         self.report_raised_this_record = True
+        if self.last_report_timeout is not None:
+            self.last_report_timeout.reset()
 
     def should_report(self) -> Set[str]:
         reasons_to_report: Set[str] = set()
@@ -127,6 +132,9 @@ class ProgressTracker(Generic[T]):
 
         if self.idle_timeout is not None and self.idle_timeout.is_overdue():
             reasons_to_report.add(EVERY_N_SECONDS_IDLE)
+
+        if self.last_report_timeout is not None and self.last_report_timeout.is_overdue():
+            reasons_to_report.add(EVERY_N_SECONDS_SINCE_REPORT)
 
         if self.timeout is not None and self.timeout.is_overdue():
             reasons_to_report.add(EVERY_N_SECONDS)

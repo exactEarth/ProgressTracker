@@ -46,7 +46,7 @@ class CustomFormatFunctions(unittest.TestCase):
 
 
 class IterateWithDelays(object):
-    def __init__(self, iterable, gaps_every_n_records=2, gap_seconds=5):
+    def __init__(self, iterable, gaps_every_n_records=1, gap_seconds=1):
         self.iterable = iterable
         self.gaps_every_n_records = gaps_every_n_records
         self.gap_seconds = gap_seconds
@@ -143,6 +143,13 @@ class BoundedTests(unittest.TestCase):
                                 callback=lambda _: self.increment()):
             continue
         self.assertEqual(self.callback_count, 1)
+
+    def test_every_n_seconds_since_report(self):
+        NUMBER_OF_ITERATIONS = 10
+        print("Starting a test that will take {0} seconds".format(NUMBER_OF_ITERATIONS))
+        results = list(track_progress(iterate_with_delays(range(10), gaps_every_n_records=1, gap_seconds=1), every_n_records=3, every_n_seconds_since_report=2, callback=lambda _: self.increment()))
+        self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
+        self.assertEqual(self.callback_count, 6)
 
     def test_every_n_percent_every_y_records(self):
         NUMBER_OF_ITERATIONS = 100
