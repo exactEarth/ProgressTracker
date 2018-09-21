@@ -46,13 +46,17 @@ class CustomFormatFunctions(unittest.TestCase):
 
 
 class UseAsExplicitContextManager(unittest.TestCase):
+    def setUp(self):
+        self.callback_count = 0
+
+    def increment(self):
+        self.callback_count += 1
 
     def test_as_context_manager(self):
         # [5,10...100]
         NUMBER_OF_ITERATIONS = 101
 
-        with track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=5, context_manager=True) as tracker:
-            print()
+        with track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=5, context_manager=True, callback=lambda _: self.increment()) as tracker:
             self.assertEqual(tracker.records_seen, 0)
             for _ in tracker:
                 continue
@@ -143,17 +147,15 @@ class BoundedTests(unittest.TestCase):
 
     def test_every_n_seconds(self):
         NUMBER_OF_ITERATIONS = 2
-        SECONDS_BETWEEN_ITERATIONS = 2
-        print("Starting a test that will take {0} seconds".format(NUMBER_OF_ITERATIONS * SECONDS_BETWEEN_ITERATIONS))
-        for _ in track_progress(range(1, NUMBER_OF_ITERATIONS + 1), every_n_seconds=1, callback=lambda _: self.increment()):
+        SECONDS_BETWEEN_ITERATIONS = 0.02
+        for _ in track_progress(range(1, NUMBER_OF_ITERATIONS + 1), every_n_seconds=0.01, callback=lambda _: self.increment()):
             time.sleep(SECONDS_BETWEEN_ITERATIONS)
         self.assertEqual(self.callback_count, 2)
 
     def test_every_n_seconds_idle(self):
-        IDLE_SECONDS_TRIGGER = 2
+        IDLE_SECONDS_TRIGGER = 0.02
 
-        print("Starting a test that will take {0} seconds".format(IDLE_SECONDS_TRIGGER + 2))
-        for _ in track_progress(iterate_with_delays(range(1, 4), gaps_every_n_records=2, gap_seconds=IDLE_SECONDS_TRIGGER + 2),
+        for _ in track_progress(iterate_with_delays(range(1, 4), gaps_every_n_records=2, gap_seconds=IDLE_SECONDS_TRIGGER + 0.02),
                                 every_n_seconds_idle=IDLE_SECONDS_TRIGGER,
                                 callback=lambda _: self.increment()):
             continue
@@ -161,8 +163,7 @@ class BoundedTests(unittest.TestCase):
 
     def test_every_n_seconds_since_report(self):
         NUMBER_OF_ITERATIONS = 10
-        print("Starting a test that will take {0} seconds".format(NUMBER_OF_ITERATIONS))
-        results = list(track_progress(iterate_with_delays(range(10), gaps_every_n_records=1, gap_seconds=1), every_n_records=3, every_n_seconds_since_report=2, callback=lambda _: self.increment()))
+        results = list(track_progress(iterate_with_delays(range(10), gaps_every_n_records=1, gap_seconds=0.01), every_n_records=3, every_n_seconds_since_report=0.02, callback=lambda _: self.increment()))
         self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
         self.assertEqual(self.callback_count, 6)
 
@@ -242,17 +243,15 @@ class UnboundedTests(unittest.TestCase):
 
     def test_every_n_seconds(self):
         NUMBER_OF_ITERATIONS = 2
-        SECONDS_BETWEEN_ITERATIONS = 2
-        print("Starting a test that will take {0} seconds".format(NUMBER_OF_ITERATIONS * SECONDS_BETWEEN_ITERATIONS))
-        for _ in track_progress((i for i in range(1, NUMBER_OF_ITERATIONS + 1)), every_n_seconds=1, callback=lambda _: self.increment()):
+        SECONDS_BETWEEN_ITERATIONS = 0.02
+        for _ in track_progress((i for i in range(1, NUMBER_OF_ITERATIONS + 1)), every_n_seconds=0.01, callback=lambda _: self.increment()):
             time.sleep(SECONDS_BETWEEN_ITERATIONS)
         self.assertEqual(self.callback_count, 2)
 
     def test_every_n_seconds_idle(self):
-        IDLE_SECONDS_TRIGGER = 2
+        IDLE_SECONDS_TRIGGER = 0.02
 
-        print("Starting a test that will take {0} seconds".format(IDLE_SECONDS_TRIGGER + 2))
-        for _ in track_progress(iterate_with_delays((i for i in range(1, 4)), gaps_every_n_records=2, gap_seconds=IDLE_SECONDS_TRIGGER + 2),
+        for _ in track_progress(iterate_with_delays((i for i in range(1, 4)), gaps_every_n_records=2, gap_seconds=IDLE_SECONDS_TRIGGER + 0.02),
                                 every_n_seconds_idle=IDLE_SECONDS_TRIGGER,
                                 callback=lambda _: self.increment()):
             continue
