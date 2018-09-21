@@ -1,5 +1,6 @@
 import time
 import unittest
+import warnings
 
 from collections import Counter
 from progress_tracker import track_progress
@@ -190,9 +191,12 @@ class UnboundedTests(unittest.TestCase):
         # [5,10...100]
         NUMBER_OF_ITERATIONS = 101
 
-        # every_n_percent doesn't make sense when you don't know the size (because it is a generator)
-        with self.assertRaises(Exception):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
             track_progress((i for i in range(0, NUMBER_OF_ITERATIONS)), every_n_percent=5, callback=lambda _: self.increment())
+            assert len(w) == 1
+            assert issubclass(w[-1].category, RuntimeWarning)
+            assert str(w[-1].message) == "Asked to report 'every_n_percent', but total length is not available."
 
         # But if you happen to know the size a priori, you can pass it in
         results = list(track_progress((i for i in range(0, NUMBER_OF_ITERATIONS)), total=NUMBER_OF_ITERATIONS, every_n_percent=5, callback=lambda _: self.increment()))
@@ -240,7 +244,8 @@ class UnboundedTests(unittest.TestCase):
         self.assertEqual(self.callback_count, 19)
 
     def test_format_strings(self):
-        track_progress((i for i in range(0, 100)), total=100, format_callback=lambda report, _reasons: "{percent_complete}".format(**report), every_n_records=11, callback=lambda _: self.increment())
+        for _ in track_progress((i for i in range(0, 100)), total=100, format_callback=lambda report, _reasons: "{percent_complete}".format(**report), every_n_records=11, callback=lambda _: self.increment()):
+            continue
 
 
 if __name__ == '__main__':

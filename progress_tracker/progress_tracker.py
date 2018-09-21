@@ -1,3 +1,4 @@
+import warnings
 from datetime import datetime, timedelta
 
 from progress_tracker.timeout import Timeout
@@ -55,7 +56,7 @@ class ProgressTracker(Generic[T]):
             self.total = total
 
         if self.total is None and every_n_percent is not None:
-            raise Exception("Cannot ask to report 'every_n_percent' if total length is not available")
+            warnings.warn("Asked to report 'every_n_percent', but total length is not available.", RuntimeWarning)
 
         self.callback = callback
         self.format_callback = format_callback

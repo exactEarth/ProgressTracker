@@ -107,7 +107,7 @@ The ``every_n_percent`` parameter will trigger a report after every nth percent 
     900/1000 (90.0%) in 0:00:00.000979 (Time left: 0:00:00.000109)
     1000 in 0:00:00.001086
 
-``every_n_percent`` only works for bounded iterables. For unbounded iterables (ex. streams), ``every_n_percent`` cannot be used and will raise an ``Exception``.
+``every_n_percent`` only works for bounded iterables. For unbounded iterables (ex. streams), using ``every_n_percent`` will report a ``RuntimeWarning``.
 
 At most a single report is generated per processed record. Even if processing of a single record would meet the conditions multiple times 
 (ex. if ``every_n_percent=10``, but there are only 2 records, then processing each record causes 50%, or 5 * 10%, progress), only a single report is created (containing the latest values).
