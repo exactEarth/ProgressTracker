@@ -38,6 +38,7 @@ class ProgressTracker(Generic[T]):
                  total: Optional[int] = None,
                  callback: Callable[[str], Any] = print,
                  format_callback: Callable[[Dict[str, Any], Set[str]], str] = default_format_callback,
+                 context_manager: bool = False,
                  every_n_percent: Optional[float] = None,
                  every_n_records: Optional[int] = None,
                  every_n_seconds: Optional[float] = None,
@@ -47,6 +48,7 @@ class ProgressTracker(Generic[T]):
                  report_last_record: bool = False) -> None:
 
         self.iterable = iterable
+        self.context_manager = context_manager
 
         self.total: Optional[int]
         try:
@@ -85,7 +87,7 @@ class ProgressTracker(Generic[T]):
         self.report_raised_this_record = False
 
     def __iter__(self) -> Iterable[T]:
-        with self:
+        def iter_helper() -> Iterable[T]:
             if self.timeout is not None:
                 self.timeout.reset()
             if self.idle_timeout is not None:
@@ -110,8 +112,15 @@ class ProgressTracker(Generic[T]):
             if self.report_last_record and self.records_seen > 0 and not self.report_raised_this_record:  # Ensure that we don't break the "Report Creation Invariants".
                 self.raise_report(set([REPORT_LAST_RECORD]))
 
-    def __enter__(self) -> None:
+        if self.context_manager:
+            yield from iter_helper()
+        else:
+            with self:
+                yield from iter_helper()
+
+    def __enter__(self) -> 'ProgressTracker':  # https://stackoverflow.com/questions/33533148/how-do-i-specify-that-the-return-type-of-a-method-is-the-same-as-the-class-itsel
         self.start_time = datetime.utcnow()
+        return self
 
     def __exit__(self, exc_type: Optional[Type[Exception]], value: Optional[Exception], traceback: Optional[TracebackType]) -> None:
         self.complete()

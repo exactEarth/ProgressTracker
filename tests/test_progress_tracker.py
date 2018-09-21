@@ -45,6 +45,21 @@ class CustomFormatFunctions(unittest.TestCase):
         self.assertEqual(self.callback_results["Even"], 10)
 
 
+class UseAsExplicitContextManager(unittest.TestCase):
+
+    def test_as_context_manager(self):
+        # [5,10...100]
+        NUMBER_OF_ITERATIONS = 101
+
+        with track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=5, context_manager=True) as tracker:
+            print()
+            self.assertEqual(tracker.records_seen, 0)
+            for _ in tracker:
+                continue
+            self.assertEqual(tracker.records_seen, NUMBER_OF_ITERATIONS)
+            self.assertEqual(tracker.reports_raised, 20)
+
+
 class IterateWithDelays(object):
     def __init__(self, iterable, gaps_every_n_records=1, gap_seconds=1):
         self.iterable = iterable

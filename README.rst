@@ -51,6 +51,7 @@ By changing the parameters passed to ``track_progress``, you can customize how f
         total: Optional[int] = None, # Override for the total message count, defaults to len(iterable)
         callback: Callable[[str], Any] = print, # A function (f(str) -> None) that gets called each time a condition matches
         format_callback: Callable[[Dict[str, Any], Set[str]], str] = default_format_callback, # A function (f(str) -> str) that formats the progress values into a string.
+        context_manager: bool = False, # Enable to use track_progress as a context manager. Useful if you want access to the internals after processing is done.
         every_n_percent: Optional[float] = None, # Reports after every n percent
         every_n_records: Optional[int] = None, # Reports every n records
         every_n_seconds: Optional[float] = None, # Reports every n seconds
@@ -277,6 +278,21 @@ Note that ``every_n_seconds`` reports at 3 seconds and 6 seconds, as one would e
 Then note that instead of next reporting at 12 seconds (9s + 3s), it reports next at 14 seconds (11s + 3s).
 
 ``every_n_seconds_idle`` only reported at 11 seconds, since that was the only time that a record was processed without other records being processed during the previous 3 seconds.
+
+Accessing tracker after processing
+----------------------------------
+
+By default, ``track_progress`` hides the internal ``ProgressTracker`` object underneath. However, in some cases you might want to be able to access the internals of the object after iteration.
+You can use the ``context_manager=True`` parameter to make the ``ProgressTracker`` object an explicit context manager:
+
+.. code:: python
+    
+    with track_progress(range(0, 101), every_n_percent=5, context_manager=True) as tracker:
+        for item in tracker:
+            process(item)
+        final_report = tracker.create_report()
+        print(f"Processing took {final_report['time_taken']} and processed {final_report['records_seen']} records.")
+
 
 Other Resources
 ---------------
