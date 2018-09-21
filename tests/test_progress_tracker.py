@@ -56,7 +56,7 @@ class UseAsExplicitContextManager(unittest.TestCase):
         # [5,10...100]
         NUMBER_OF_ITERATIONS = 101
 
-        with track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=5, context_manager=True, callback=lambda _: self.increment()) as tracker:
+        with track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=5, callback=lambda _: self.increment()) as tracker:
             self.assertEqual(tracker.records_seen, 0)
             for _ in tracker:
                 continue
