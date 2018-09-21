@@ -1,3 +1,4 @@
+import warnings
 from datetime import datetime, timedelta
 
 from progress_tracker.timeout import Timeout
@@ -10,6 +11,7 @@ EVERY_N_PERCENT = "every_n_percent"
 EVERY_N_RECORDS = "every_n_records"
 EVERY_N_SECONDS = "every_n_seconds"
 EVERY_N_SECONDS_IDLE = "every_n_seconds_idle"
+EVERY_N_SECONDS_SINCE_REPORT = "every_n_seconds_since_report"
 REPORT_FIRST_RECORD = "report_first_record"
 REPORT_LAST_RECORD = "report_last_record"
 
@@ -40,10 +42,13 @@ class ProgressTracker(Generic[T]):
                  every_n_records: Optional[int] = None,
                  every_n_seconds: Optional[float] = None,
                  every_n_seconds_idle: Optional[float] = None,
+                 every_n_seconds_since_report: Optional[float] = None,
                  report_first_record: bool = False,
                  report_last_record: bool = False) -> None:
 
         self.iterable = iterable
+
+        self.used_as_context_manager = False
 
         self.total: Optional[int]
         try:
@@ -55,7 +60,7 @@ class ProgressTracker(Generic[T]):
             self.total = total
 
         if self.total is None and every_n_percent is not None:
-            raise Exception("Cannot ask to report 'every_n_percent' if total length is not available")
+            warnings.warn("Asked to report 'every_n_percent', but total length is not available.", RuntimeWarning)
 
         self.callback = callback
         self.format_callback = format_callback
@@ -68,6 +73,7 @@ class ProgressTracker(Generic[T]):
 
         self.timeout = Timeout(timedelta(seconds=every_n_seconds)) if every_n_seconds is not None else None
         self.idle_timeout = Timeout(timedelta(seconds=every_n_seconds_idle)) if every_n_seconds_idle is not None else None
+        self.last_report_timeout = Timeout(timedelta(seconds=every_n_seconds_since_report)) if every_n_seconds_since_report is not None else None
 
         self.report_first_record = report_first_record
         self.report_last_record = report_last_record
@@ -81,7 +87,7 @@ class ProgressTracker(Generic[T]):
         self.report_raised_this_record = False
 
     def __iter__(self) -> Iterable[T]:
-        with self:
+        def iter_helper() -> Iterable[T]:
             if self.timeout is not None:
                 self.timeout.reset()
             if self.idle_timeout is not None:
@@ -106,8 +112,16 @@ class ProgressTracker(Generic[T]):
             if self.report_last_record and self.records_seen > 0 and not self.report_raised_this_record:  # Ensure that we don't break the "Report Creation Invariants".
                 self.raise_report(set([REPORT_LAST_RECORD]))
 
-    def __enter__(self) -> None:
+        if self.used_as_context_manager:
+            yield from iter_helper()
+        else:
+            with self:
+                yield from iter_helper()
+
+    def __enter__(self) -> 'ProgressTracker':  # https://stackoverflow.com/questions/33533148/how-do-i-specify-that-the-return-type-of-a-method-is-the-same-as-the-class-itsel
         self.start_time = datetime.utcnow()
+        self.used_as_context_manager = True
+        return self
 
     def __exit__(self, exc_type: Optional[Type[Exception]], value: Optional[Exception], traceback: Optional[TracebackType]) -> None:
         self.complete()
@@ -117,6 +131,8 @@ class ProgressTracker(Generic[T]):
         self.callback(self.format_callback(self.create_report(), reasons_to_report))
         self.reports_raised += 1
         self.report_raised_this_record = True
+        if self.last_report_timeout is not None:
+            self.last_report_timeout.reset()
 
     def should_report(self) -> Set[str]:
         reasons_to_report: Set[str] = set()
@@ -126,6 +142,9 @@ class ProgressTracker(Generic[T]):
 
         if self.idle_timeout is not None and self.idle_timeout.is_overdue():
             reasons_to_report.add(EVERY_N_SECONDS_IDLE)
+
+        if self.last_report_timeout is not None and self.last_report_timeout.is_overdue():
+            reasons_to_report.add(EVERY_N_SECONDS_SINCE_REPORT)
 
         if self.timeout is not None and self.timeout.is_overdue():
             reasons_to_report.add(EVERY_N_SECONDS)

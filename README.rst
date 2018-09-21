@@ -54,7 +54,8 @@ By changing the parameters passed to ``track_progress``, you can customize how f
         every_n_percent: Optional[float] = None, # Reports after every n percent
         every_n_records: Optional[int] = None, # Reports every n records
         every_n_seconds: Optional[float] = None, # Reports every n seconds
-        every_n_seconds_idle: Optional[float] = None, # Report every n seconds, but only if there hasn’t been any progress. Useful for infinite streams
+        every_n_seconds_idle: Optional[float] = None, # Report if there has not been a record processed in the past n seconds. Useful for infinite streams.
+        every_n_seconds_since_report: Optional[float] = None, # Report if there hasn’t been any report in the past n seconds.
         report_first_record: bool = False, # Report after the first record
         report_last_record: bool = False # Report after the last record
         ) -> None
@@ -107,7 +108,7 @@ The ``every_n_percent`` parameter will trigger a report after every nth percent 
     900/1000 (90.0%) in 0:00:00.000979 (Time left: 0:00:00.000109)
     1000 in 0:00:00.001086
 
-``every_n_percent`` only works for bounded iterables. For unbounded iterables (ex. streams), ``every_n_percent`` cannot be used and will raise an ``Exception``.
+``every_n_percent`` only works for bounded iterables. For unbounded iterables (ex. streams), using ``every_n_percent`` will report a ``RuntimeWarning``.
 
 At most a single report is generated per processed record. Even if processing of a single record would meet the conditions multiple times 
 (ex. if ``every_n_percent=10``, but there are only 2 records, then processing each record causes 50%, or 5 * 10%, progress), only a single report is created (containing the latest values).
@@ -276,6 +277,21 @@ Note that ``every_n_seconds`` reports at 3 seconds and 6 seconds, as one would e
 Then note that instead of next reporting at 12 seconds (9s + 3s), it reports next at 14 seconds (11s + 3s).
 
 ``every_n_seconds_idle`` only reported at 11 seconds, since that was the only time that a record was processed without other records being processed during the previous 3 seconds.
+
+Accessing tracker after processing
+----------------------------------
+
+By default, ``track_progress`` hides the internal ``ProgressTracker`` object underneath. However, in some cases you might want to be able to access the internals of the object after iteration.
+In these cases, you can use ``track_progress`` an explicit context manager:
+
+.. code:: python
+    
+    with track_progress(range(0, 101), every_n_percent=5) as tracker:
+        for item in tracker:
+            process(item)
+        final_report = tracker.create_report()
+        print(f"Processing took {final_report['time_taken']} and processed {final_report['records_seen']} records.")
+
 
 Other Resources
 ---------------

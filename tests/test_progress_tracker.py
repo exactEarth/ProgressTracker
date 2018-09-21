@@ -1,5 +1,6 @@
 import time
 import unittest
+import warnings
 
 from collections import Counter
 from progress_tracker import track_progress
@@ -44,8 +45,27 @@ class CustomFormatFunctions(unittest.TestCase):
         self.assertEqual(self.callback_results["Even"], 10)
 
 
+class UseAsExplicitContextManager(unittest.TestCase):
+    def setUp(self):
+        self.callback_count = 0
+
+    def increment(self):
+        self.callback_count += 1
+
+    def test_as_context_manager(self):
+        # [5,10...100]
+        NUMBER_OF_ITERATIONS = 101
+
+        with track_progress(range(0, NUMBER_OF_ITERATIONS), every_n_percent=5, callback=lambda _: self.increment()) as tracker:
+            self.assertEqual(tracker.records_seen, 0)
+            for _ in tracker:
+                continue
+            self.assertEqual(tracker.records_seen, NUMBER_OF_ITERATIONS)
+            self.assertEqual(tracker.reports_raised, 20)
+
+
 class IterateWithDelays(object):
-    def __init__(self, iterable, gaps_every_n_records=2, gap_seconds=5):
+    def __init__(self, iterable, gaps_every_n_records=1, gap_seconds=1):
         self.iterable = iterable
         self.gaps_every_n_records = gaps_every_n_records
         self.gap_seconds = gap_seconds
@@ -127,21 +147,25 @@ class BoundedTests(unittest.TestCase):
 
     def test_every_n_seconds(self):
         NUMBER_OF_ITERATIONS = 2
-        SECONDS_BETWEEN_ITERATIONS = 2
-        print("Starting a test that will take {0} seconds".format(NUMBER_OF_ITERATIONS * SECONDS_BETWEEN_ITERATIONS))
-        for _ in track_progress(range(1, NUMBER_OF_ITERATIONS + 1), every_n_seconds=1, callback=lambda _: self.increment()):
+        SECONDS_BETWEEN_ITERATIONS = 0.02
+        for _ in track_progress(range(1, NUMBER_OF_ITERATIONS + 1), every_n_seconds=0.01, callback=lambda _: self.increment()):
             time.sleep(SECONDS_BETWEEN_ITERATIONS)
         self.assertEqual(self.callback_count, 2)
 
     def test_every_n_seconds_idle(self):
-        IDLE_SECONDS_TRIGGER = 2
+        IDLE_SECONDS_TRIGGER = 0.02
 
-        print("Starting a test that will take {0} seconds".format(IDLE_SECONDS_TRIGGER + 2))
-        for _ in track_progress(iterate_with_delays(range(1, 4), gaps_every_n_records=2, gap_seconds=IDLE_SECONDS_TRIGGER + 2),
+        for _ in track_progress(iterate_with_delays(range(1, 4), gaps_every_n_records=2, gap_seconds=IDLE_SECONDS_TRIGGER + 0.02),
                                 every_n_seconds_idle=IDLE_SECONDS_TRIGGER,
                                 callback=lambda _: self.increment()):
             continue
         self.assertEqual(self.callback_count, 1)
+
+    def test_every_n_seconds_since_report(self):
+        NUMBER_OF_ITERATIONS = 10
+        results = list(track_progress(iterate_with_delays(range(10), gaps_every_n_records=1, gap_seconds=0.01), every_n_records=3, every_n_seconds_since_report=0.02, callback=lambda _: self.increment()))
+        self.assertEqual(len(results), NUMBER_OF_ITERATIONS)
+        self.assertEqual(self.callback_count, 6)
 
     def test_every_n_percent_every_y_records(self):
         NUMBER_OF_ITERATIONS = 100
@@ -190,9 +214,12 @@ class UnboundedTests(unittest.TestCase):
         # [5,10...100]
         NUMBER_OF_ITERATIONS = 101
 
-        # every_n_percent doesn't make sense when you don't know the size (because it is a generator)
-        with self.assertRaises(Exception):
+        with warnings.catch_warnings(record=True) as w:
+            warnings.simplefilter("always")
             track_progress((i for i in range(0, NUMBER_OF_ITERATIONS)), every_n_percent=5, callback=lambda _: self.increment())
+            assert len(w) == 1
+            assert issubclass(w[-1].category, RuntimeWarning)
+            assert str(w[-1].message) == "Asked to report 'every_n_percent', but total length is not available."
 
         # But if you happen to know the size a priori, you can pass it in
         results = list(track_progress((i for i in range(0, NUMBER_OF_ITERATIONS)), total=NUMBER_OF_ITERATIONS, every_n_percent=5, callback=lambda _: self.increment()))
@@ -216,17 +243,15 @@ class UnboundedTests(unittest.TestCase):
 
     def test_every_n_seconds(self):
         NUMBER_OF_ITERATIONS = 2
-        SECONDS_BETWEEN_ITERATIONS = 2
-        print("Starting a test that will take {0} seconds".format(NUMBER_OF_ITERATIONS * SECONDS_BETWEEN_ITERATIONS))
-        for _ in track_progress((i for i in range(1, NUMBER_OF_ITERATIONS + 1)), every_n_seconds=1, callback=lambda _: self.increment()):
+        SECONDS_BETWEEN_ITERATIONS = 0.02
+        for _ in track_progress((i for i in range(1, NUMBER_OF_ITERATIONS + 1)), every_n_seconds=0.01, callback=lambda _: self.increment()):
             time.sleep(SECONDS_BETWEEN_ITERATIONS)
         self.assertEqual(self.callback_count, 2)
 
     def test_every_n_seconds_idle(self):
-        IDLE_SECONDS_TRIGGER = 2
+        IDLE_SECONDS_TRIGGER = 0.02
 
-        print("Starting a test that will take {0} seconds".format(IDLE_SECONDS_TRIGGER + 2))
-        for _ in track_progress(iterate_with_delays((i for i in range(1, 4)), gaps_every_n_records=2, gap_seconds=IDLE_SECONDS_TRIGGER + 2),
+        for _ in track_progress(iterate_with_delays((i for i in range(1, 4)), gaps_every_n_records=2, gap_seconds=IDLE_SECONDS_TRIGGER + 0.02),
                                 every_n_seconds_idle=IDLE_SECONDS_TRIGGER,
                                 callback=lambda _: self.increment()):
             continue
@@ -240,7 +265,8 @@ class UnboundedTests(unittest.TestCase):
         self.assertEqual(self.callback_count, 19)
 
     def test_format_strings(self):
-        track_progress((i for i in range(0, 100)), total=100, format_callback=lambda report, _reasons: "{percent_complete}".format(**report), every_n_records=11, callback=lambda _: self.increment())
+        for _ in track_progress((i for i in range(0, 100)), total=100, format_callback=lambda report, _reasons: "{percent_complete}".format(**report), every_n_records=11, callback=lambda _: self.increment()):
+            continue
 
 
 if __name__ == '__main__':
