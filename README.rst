@@ -2,6 +2,15 @@
 progress_tracker
 ================
 
+.. image:: https://img.shields.io/circleci/project/github/exactEarth/ProgressTracker.svg
+    :target: https://circleci.com/gh/exactEarth/ProgressTracker/tree/master
+
+.. image:: https://img.shields.io/pypi/v/progress_tracker.svg
+    :target: https://pypi.org/project/progress_tracker/
+
+.. image:: https://img.shields.io/pypi/pyversions/progress_tracker.svg
+    :target: https://pypi.org/project/progress_tracker/
+
 ``progress_tracker`` is an easy and flexible way to print custom progress messages while processing streams of events on the CLI.
 
 It was originally developed at `exactEarth Ltd`_ . See `this presentation`_ to `DevHouse Waterloo`_ for the original motivation.
